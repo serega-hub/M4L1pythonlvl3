@@ -81,39 +81,27 @@ def handle_rating(message):
     bot.send_message(message.chat.id, res)
     
     
-#@bot.message_handler(commands=['get_my_score'])   
-#def get_score(message):
-    #cc = create_collage(image_paths) 
-    #bot.send_message(message.chat.id, cc)
+@bot.message_handler(commands=['get_my_score'])   
+def get_score(message):
 
-    #user_id = message.chat.id
+    user_id = message.chat.id
 
-    # Получаем выигранные картинки пользователя
-    #info = manager.get_winners_img(user_id)
-    #if not info:
-        #bot.send_message(user_id, "У тебя пока нет выигранных картинок 😢")
-        #return
-
-    #prizes = [x[0] for x in info]
-
-    #image_paths = []
-    #for img in os.listdir('img'):
-        #if img in prizes:
-          #  image_paths.append(f'img/{img}')
-        #else:
-            #image_paths.append(f'hidden_img/{img}')
-
-    #collage = create_collage(image_paths)
+    m = DatabaseManager(DATABASE) 
+    info = m.get_winners_img(user_id) 
+    prizes = [x[0] for x in info] 
+    image_paths = os.listdir('img') 
+    image_paths = [f'img/{x}' if x in prizes else f'hidden_img/{x}' for x in image_paths] 
+    collage = create_collage(image_paths) 
 
     # сохраняем коллаж
-    #collage_path = f'temp_collage_{user_id}.png'
-    #cv2.imwrite(collage_path, collage)
+    collage_path = f'temp_collage_{user_id}.png'
+    cv2.imwrite(collage_path, collage)
 
     # отправляем
-    #with open(collage_path, 'rb') as photo:
-        #bot.send_photo(user_id, photo)
+    with open(collage_path, 'rb') as photo:
+        bot.send_photo(user_id, photo)
 
-    #os.remove(collage_path)
+    os.remove(collage_path)
 
 
 @bot.callback_query_handler(func=lambda call: True)
