@@ -4,7 +4,11 @@ from logic import *
 import schedule
 import threading
 import time
+import requests
 from config import *
+import os
+import cv2
+
 
 bot = TeleBot(API_TOKEN)
 
@@ -13,10 +17,7 @@ def gen_markup(id):
     markup.row_width = 1
     markup.add(InlineKeyboardButton("Получить!", callback_data=id))
     return markup
-
-
-
-
+ 
 def send_message():
     prize_id, img = manager.get_random_prize()[:2]
     manager.mark_prize_used(prize_id)
@@ -31,6 +32,31 @@ def shedule_thread():
     while True:
         schedule.run_pending()
         time.sleep(1)
+
+
+@bot.message_handler(commands=['ban'])
+def ban_user(message):
+    if message.reply_to_message: #проверка на то, что эта команда была вызвана в ответ на сообщение 
+        chat_id = message.chat.id # сохранение id чата
+         # сохранение id и статуса пользователя, отправившего сообщение
+        user_id = message.reply_to_message.from_user.id
+        user_status = bot.get_chat_member(chat_id, user_id).status 
+         # проверка пользователя
+        if user_status == 'administrator' or user_status == 'creator':
+            bot.reply_to(message, "Невозможно забанить администратора.")
+        else:
+            bot.ban_chat_member(chat_id, user_id) # пользователь с user_id будет забанен в чате с chat_id
+            bot.reply_to(message, f"Пользователь @{message.reply_to_message.from_user.username} был забанен.")
+    else:
+        bot.reply_to(message, "Эта команда должна быть использована в ответ на сообщение пользователя, которого вы хотите забанить.")
+
+
+@bot.message_handler(content_types=['new_chat_members'])
+def make_some(message):
+    bot.send_message(message.chat.id, 'I accepted a new user!')
+    bot.approve_chat_join_request(message.chat.id, message.from_user.id)
+
+
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
@@ -55,7 +81,41 @@ def handle_rating(message):
     bot.send_message(message.chat.id, res)
     
     
-    
+#@bot.message_handler(commands=['get_my_score'])   
+#def get_score(message):
+    #cc = create_collage(image_paths) 
+    #bot.send_message(message.chat.id, cc)
+
+    #user_id = message.chat.id
+
+    # Получаем выигранные картинки пользователя
+    #info = manager.get_winners_img(user_id)
+    #if not info:
+        #bot.send_message(user_id, "У тебя пока нет выигранных картинок 😢")
+        #return
+
+    #prizes = [x[0] for x in info]
+
+    #image_paths = []
+    #for img in os.listdir('img'):
+        #if img in prizes:
+          #  image_paths.append(f'img/{img}')
+        #else:
+            #image_paths.append(f'hidden_img/{img}')
+
+    #collage = create_collage(image_paths)
+
+    # сохраняем коллаж
+    #collage_path = f'temp_collage_{user_id}.png'
+    #cv2.imwrite(collage_path, collage)
+
+    # отправляем
+    #with open(collage_path, 'rb') as photo:
+        #bot.send_photo(user_id, photo)
+
+    #os.remove(collage_path)
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
 
